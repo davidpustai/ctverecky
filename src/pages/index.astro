@@ -1,0 +1,198 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import type { Og } from "@utils/og.ts";
+
+const TITLE = "Veskovo čtverečky";
+const OG: Og = {
+    type: "website",
+    // image: {
+    //     url: "TODO",
+    //     width: 1200,
+    //     height: 630,
+    //     type: "image/webp",
+    //     alt: "TODO",
+    // },
+};
+---
+
+<BaseLayout title={TITLE} og={OG}>
+    <h1 class="sr-only">Veskovo čtverečky</h1>
+    <div id="map-canvas" class="size-full"></div>
+</BaseLayout>
+
+<script>
+    import {
+        Map,
+        TileLayer,
+        Control,
+        DomUtil,
+        DomEvent,
+        GeoJSON,
+    } from "leaflet";
+    import "leaflet/dist/leaflet.css";
+    import { styleFor } from "@utils/featureStyles";
+
+    const DEFAULT_VIEW = { x: 15.0543, y: 50.7663, z: 10 };
+    const STORAGE_KEY = "ctverecky:mapView";
+    const COORD_DECIMALS = 5;
+
+    type View = { x: number; y: number; z: number };
+
+    function parseView(
+        x: string | number | null | undefined,
+        y: string | number | null | undefined,
+        z: string | number | null | undefined,
+    ): View | null {
+        const nx = typeof x === "string" ? parseFloat(x) : x;
+        const ny = typeof y === "string" ? parseFloat(y) : y;
+        const nz = typeof z === "string" ? parseFloat(z) : z;
+        if (
+            nx == null ||
+            ny == null ||
+            nz == null ||
+            !Number.isFinite(nx) ||
+            !Number.isFinite(ny) ||
+            !Number.isFinite(nz) ||
+            nx < -180 ||
+            nx > 180 ||
+            ny < -90 ||
+            ny > 90 ||
+            nz < 0 ||
+            nz > 19
+        ) {
+            return null;
+        }
+        return { x: nx, y: ny, z: nz };
+    }
+
+    function viewFromUrl(): View | null {
+        const p = new URLSearchParams(window.location.search);
+        if (!p.has("x") && !p.has("y") && !p.has("z")) return null;
+        return parseView(p.get("x"), p.get("y"), p.get("z"));
+    }
+
+    function viewFromStorage(): View | null {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return null;
+            const obj = JSON.parse(raw);
+            return parseView(obj?.x, obj?.y, obj?.z);
+        } catch {
+            return null;
+        }
+    }
+
+    const initialView =
+        viewFromUrl() ?? viewFromStorage() ?? DEFAULT_VIEW;
+
+    const map = new Map("map-canvas", {
+        zoomControl: false,
+    }).setView([initialView.y, initialView.x], initialView.z);
+
+    new TileLayer(
+        `https://api.mapy.com/v1/maptiles/basic/256/{z}/{x}/{y}?apikey=${import.meta.env.PUBLIC_MAPY_COM_API_KEY}`,
+        {
+            minZoom: 0,
+            maxZoom: 19,
+            attribution:
+                '<a href="https://api.mapy.com/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>',
+        },
+    ).addTo(map);
+
+    const MapyLogoControl = Control.extend({
+        options: {
+            position: "bottomleft",
+        },
+        onAdd: function () {
+            const container = DomUtil.create("div");
+            const link = DomUtil.create("a", "", container);
+
+            link.setAttribute("href", "https://mapy.com/");
+            link.setAttribute("target", "_blank");
+            link.innerHTML =
+                '<img src="https://api.mapy.com/img/api/logo.svg" alt="Mapy.com" width="100" height="30" />';
+            DomEvent.disableClickPropagation(link);
+
+            return container;
+        },
+    });
+
+    new MapyLogoControl().addTo(map);
+
+    const geojson = await fetch(
+        import.meta.env.PUBLIC_SQUADRATS_GEOJSON_URL,
+    ).then((r) => r.json());
+    new GeoJSON(geojson, {
+        style: styleFor,
+    }).addTo(map);
+
+    function currentView(): View {
+        const c = map.getCenter();
+        return {
+            x: parseFloat(c.lng.toFixed(COORD_DECIMALS)),
+            y: parseFloat(c.lat.toFixed(COORD_DECIMALS)),
+            z: map.getZoom(),
+        };
+    }
+
+    function urlView(): View | null {
+        const p = new URLSearchParams(window.location.search);
+        return parseView(p.get("x"), p.get("y"), p.get("z"));
+    }
+
+    function viewsEqual(a: View | null, b: View | null): boolean {
+        return (
+            a != null &&
+            b != null &&
+            a.x === b.x &&
+            a.y === b.y &&
+            a.z === b.z
+        );
+    }
+
+    let syncTimer: ReturnType<typeof setTimeout> | null = null;
+    let suppressSync = false;
+
+    function writeView(v: View, method: "push" | "replace") {
+        const params = new URLSearchParams(window.location.search);
+        params.set("x", String(v.x));
+        params.set("y", String(v.y));
+        params.set("z", String(v.z));
+        const url = `${window.location.pathname}?${params.toString()}`;
+        if (method === "push") history.pushState(null, "", url);
+        else history.replaceState(null, "", url);
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(v));
+        } catch {
+            // ignore quota / privacy mode errors
+        }
+    }
+
+    writeView(currentView(), "replace");
+
+    function scheduleSync() {
+        if (suppressSync) return;
+        if (syncTimer != null) clearTimeout(syncTimer);
+        syncTimer = setTimeout(() => {
+            syncTimer = null;
+            const v = currentView();
+            if (viewsEqual(v, urlView())) return;
+            writeView(v, "push");
+        }, 200);
+    }
+
+    map.on("moveend zoomend", scheduleSync);
+
+    window.addEventListener("popstate", () => {
+        const v = urlView();
+        if (!v) return;
+        if (viewsEqual(v, currentView())) return;
+        suppressSync = true;
+        map.setView([v.y, v.x], v.z);
+        suppressSync = false;
+        if (syncTimer != null) {
+            clearTimeout(syncTimer);
+            syncTimer = null;
+        }
+    });
+</script>

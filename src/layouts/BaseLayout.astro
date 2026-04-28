@@ -1,0 +1,91 @@
+---
+import VeskovoBarLink from "@components/VeskovoBarLink.astro";
+import type { Og } from "@utils/og.ts";
+import { LINK_CLASS_STATIC } from "@components/VeskovoBarLink.astro";
+
+import "@styles/global.css";
+
+interface Props {
+    title: string;
+    description?: string;
+    og: Og;
+}
+
+const props = Astro.props;
+---
+
+<html lang="cs">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <title>{props.title}</title>
+        {
+            props.description && (
+                <meta name="description" content={props.description} />
+            )
+        }
+
+        <meta property="og:title" content={props.title} />
+        <meta property="og:type" content={props.og.type} />
+        {
+            props.og.image && (
+                <>
+                    <meta property="og:image" content={props.og.image.url} />
+                    <meta
+                        property="og:image:type"
+                        content={props.og.image.type}
+                    />
+                    <meta
+                        property="og:image:width"
+                        content={props.og.image.width.toString()}
+                    />
+                    <meta
+                        property="og:image:height"
+                        content={props.og.image.height.toString()}
+                    />
+                    <meta
+                        property="og:image:alt"
+                        content={props.og.image.alt}
+                    />
+                </>
+            )
+        }
+        <meta property="og:url" content={Astro.url} />
+        {
+            props.description && (
+                <meta property="og:description" content={props.description} />
+            )
+        }
+        <meta property="og:locale" content="cs" />
+        <meta property="og:site_name" content="Veskovo čtverečky" />
+
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
+        <meta name="theme-color" content="#16a34a" />
+    </head>
+    <body
+        class="flex h-screen w-screen flex-col overflow-x-clip bg-body-bg leading-[1.666] text-body-text"
+    >
+        <header
+            class="group/veskovo-bar grid w-full grid-cols-3 items-stretch gap-gutter overflow-clip bg-primary text-primary-contrast"
+        >
+            <VeskovoBarLink
+                class="mr-auto first-letter:text-base"
+                href="https://djvesko.cz">Veskovo</VeskovoBarLink
+            >
+            <p
+                class:list={[
+                    LINK_CLASS_STATIC,
+                    "mx-auto inline-flex items-center",
+                ]}
+            >
+                Čtverečky
+            </p>
+        </header>
+        <main class="size-full">
+            <slot />
+        </main>
+    </body>
+</html>

@@ -1,0 +1,19 @@
+---
+interface Props {
+    class?: string;
+    href: string;
+}
+
+export const LINK_CLASS_STATIC =
+    "block px-gutter py-2 text-xs font-extrabold uppercase";
+export const LINK_CLASS_INTERACTIVE = "transition-transform hover:scale-110";
+
+const props = Astro.props;
+---
+
+<a
+    class:list={[LINK_CLASS_STATIC, LINK_CLASS_INTERACTIVE, props.class]}
+    href={props.href}
+>
+    <slot />
+</a>
