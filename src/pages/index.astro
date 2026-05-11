@@ -82,8 +82,7 @@ const OG: Og = {
         }
     }
 
-    const initialView =
-        viewFromUrl() ?? viewFromStorage() ?? DEFAULT_VIEW;
+    const initialView = viewFromUrl() ?? viewFromStorage() ?? DEFAULT_VIEW;
 
     const map = new Map("map-canvas", {
         zoomControl: false,
@@ -119,9 +118,7 @@ const OG: Og = {
 
     new MapyLogoControl().addTo(map);
 
-    const geojson = await fetch(
-        import.meta.env.PUBLIC_SQUADRATS_GEOJSON_URL,
-    ).then((r) => r.json());
+    const geojson = await fetch("/api/squares").then((r) => r.json());
     new GeoJSON(geojson, {
         style: styleFor,
     }).addTo(map);
@@ -142,11 +139,7 @@ const OG: Og = {
 
     function viewsEqual(a: View | null, b: View | null): boolean {
         return (
-            a != null &&
-            b != null &&
-            a.x === b.x &&
-            a.y === b.y &&
-            a.z === b.z
+            a != null && b != null && a.x === b.x && a.y === b.y && a.z === b.z
         );
     }
 

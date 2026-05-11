@@ -15,23 +15,26 @@
         "astro": "astro",
         "lint": "eslint .",
         "format:check": "prettier . --check --cache",
-        "format:fix": "prettier . --write --cache"
+        "format:fix": "prettier . --write --cache",
+        "check": "pnpm run astro check && pnpm run lint && pnpm run format:check"
     },
     "dependencies": {
-        "@astrojs/check": "^0.9.8",
-        "@tailwindcss/vite": "^4.2.4",
-        "astro": "^6.1.9",
+        "@astrojs/check": "^0.9.9",
+        "@astrojs/vercel": "^10.0.6",
+        "@browserbasehq/sdk": "^2.10.0",
+        "@tailwindcss/vite": "^4.3.0",
+        "astro": "^6.3.1",
         "bigger-picture": "^1.1.20",
-        "leaflet": "^2.0.0-alpha.1",
+        "leaflet": "2.0.0-alpha.1",
         "sharp": "^0.34.5",
-        "tailwindcss": "^4.2.4",
+        "tailwindcss": "^4.3.0",
         "typescript": "^5.9.3"
     },
     "devDependencies": {
         "@astrojs/ts-plugin": "^1.10.7",
         "@types/leaflet": "^1.9.21",
-        "@types/node": "^25.6.0",
-        "@typescript-eslint/parser": "^8.59.1",
+        "@types/node": "^25.6.2",
+        "@typescript-eslint/parser": "^8.59.2",
         "autoprefixer": "^10.5.0",
         "eslint": "^9.39.4",
         "eslint-plugin-astro": "^1.7.0",
@@ -42,6 +45,6 @@
         "prettier-plugin-css-order": "^2.2.0",
         "prettier-plugin-organize-imports": "^4.3.0",
         "prettier-plugin-tailwindcss": "^0.8.0",
-        "typescript-eslint": "^8.59.1"
+        "typescript-eslint": "^8.59.2"
     }
 }
