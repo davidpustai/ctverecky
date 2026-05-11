@@ -13,17 +13,17 @@ export const GET: APIRoute = async () => {
         apiKey: import.meta.env.BROWSERBASE_API_KEY as string,
     });
 
-    const mapReponse = await bb.fetchAPI.create({
+    const mapResponse = await bb.fetchAPI.create({
         url: `https://squadrats.com/map/${id}/17`,
         proxies: true,
     });
-    if (mapReponse.statusCode !== 200) {
+    if (mapResponse.statusCode !== 200) {
         return new Response("Could not fetch map", { status: 500 });
     }
 
     const imgs =
         /<img[^>]*class="[^"]*\btrophies-map\b[^"]*"[^>]*src="([^"]+)"/.exec(
-            mapReponse.content,
+            mapResponse.content,
         );
     const src = imgs?.[1] ?? "";
     const currentId = src.slice(src.lastIndexOf("/") + 1, src.lastIndexOf("_"));
@@ -42,7 +42,7 @@ export const GET: APIRoute = async () => {
         status: 200,
         headers: {
             "Content-Type": "application/geo+json",
-            "Cache-Control": "public, max-age=60, s-maxage=60",
+            "Cache-Control": "public, max-age=900, s-maxage=900",
         },
     });
 };
