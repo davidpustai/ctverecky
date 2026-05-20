@@ -54,7 +54,7 @@ jobs:
         needs: [format]
         if: ${{ !cancelled() && needs.format.result != 'failure' }}
         runs-on: ubuntu-latest
-        name: Code quality checks
+        name: Code quality check
 
         steps:
             - name: Checkout code
