@@ -9,6 +9,7 @@ permissions:
 
 jobs:
     format:
+        if: github.actor == 'dependabot[bot]'
         runs-on: ubuntu-latest
         name: Auto-apply prettier
         permissions:
@@ -51,6 +52,7 @@ jobs:
 
     checks:
         needs: [format]
+        if: ${{ !cancelled() && needs.format.result != 'failure' }}
         runs-on: ubuntu-latest
         name: Code quality checks
 
