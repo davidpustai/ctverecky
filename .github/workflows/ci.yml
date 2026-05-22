@@ -1,72 +1,20 @@
 name: CI
 
 on:
-    pull_request_target:
+    pull_request:
         types: [opened, synchronize, reopened]
 
-permissions:
-    contents: read
-
 jobs:
-    format:
-        if: github.actor == 'dependabot[bot]'
-        runs-on: ubuntu-latest
-        name: Auto-apply prettier
-        permissions:
-            contents: write
-
-        steps:
-            - name: Checkout PR branch
-              uses: actions/checkout@v4
-              with:
-                  ref: ${{ github.event.pull_request.head.ref }}
-                  repository: ${{ github.event.pull_request.head.repo.full_name }}
-                  token: ${{ secrets.GITHUB_TOKEN }}
-
-            - name: Setup pnpm
-              uses: pnpm/action-setup@v4
-              with:
-                  version: 10.20.0
-
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "24"
-                  cache: "pnpm"
-
-            - name: Install dependencies
-              run: pnpm install --no-frozen-lockfile
-
-            - name: Run format:fix
-              run: pnpm run format:fix
-
-            - name: Commit & push if changed
-              run: |
-                  if [[ -n "$(git status --porcelain)" ]]; then
-                    git config user.name  "github-actions[bot]"
-                    git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-                    git add -A
-                    git commit -m "Fix formatting"
-                    git push
-                  fi
-
     checks:
-        needs: [format]
-        if: ${{ !cancelled() && needs.format.result != 'failure' }}
         runs-on: ubuntu-latest
         name: Code quality checks
 
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
-              with:
-                  ref: ${{ github.event.pull_request.head.ref }}
-                  repository: ${{ github.event.pull_request.head.repo.full_name }}
 
             - name: Setup pnpm
               uses: pnpm/action-setup@v4
-              with:
-                  version: 10.20.0
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
