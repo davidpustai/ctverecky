@@ -20,6 +20,9 @@ export const GET: APIRoute = async () => {
     if (mapResponse.statusCode !== 200) {
         return new Response("Could not fetch map", { status: 500 });
     }
+    if (typeof mapResponse.content !== "string") {
+        return new Response("Unexpected map response", { status: 500 });
+    }
 
     const imgs =
         /<img[^>]*class="[^"]*\btrophies-map\b[^"]*"[^>]*src="([^"]+)"/.exec(
