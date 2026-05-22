@@ -2,6 +2,7 @@
     "name": "ctverecky",
     "private": "true",
     "type": "module",
+    "packageManager": "pnpm@11.2.2",
     "browserslist": [
         "> 0.5% in CZ",
         "last 2 versions",
