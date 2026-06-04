@@ -89,7 +89,7 @@ const OG: Og = {
     }).setView([initialView.y, initialView.x], initialView.z);
 
     new TileLayer(
-        `https://api.mapy.com/v1/maptiles/basic/256/{z}/{x}/{y}?apikey=${import.meta.env.PUBLIC_MAPY_COM_API_KEY}`,
+        `https://api.mapy.com/v1/maptiles/outdoor/256/{z}/{x}/{y}?apikey=${import.meta.env.PUBLIC_MAPY_COM_API_KEY}`,
         {
             minZoom: 0,
             maxZoom: 19,
