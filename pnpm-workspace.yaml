@@ -4,3 +4,11 @@ allowBuilds:
 onlyBuiltDependencies:
     - esbuild
     - sharp
+supportedArchitectures:
+    os:
+        - current
+    cpu:
+        - current
+    libc:
+        - glibc
+        - musl
