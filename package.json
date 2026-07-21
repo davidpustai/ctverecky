@@ -24,7 +24,7 @@
         "@astrojs/vercel": "^10.0.8",
         "@browserbasehq/sdk": "^2.14.1",
         "@tailwindcss/vite": "^4.3.1",
-        "astro": "^6.4.8",
+        "astro": "^7.1.0",
         "bigger-picture": "^1.1.20",
         "leaflet": "2.0.0-alpha.1",
         "sharp": "^0.35.1",
