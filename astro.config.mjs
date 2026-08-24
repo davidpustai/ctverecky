@@ -9,7 +9,7 @@ export default defineConfig({
         process.env.NODE_ENV === "production"
             ? "https://ctverecky.djvesko.cz"
             : "http://localhost:3000",
-    adapter: vercel(),
+    adapter: vercel({ maxDuration: 60 }),
     server: {
         port: 3000,
     },

@@ -1,3 +1,9 @@
+import type {
+    ExpressionSpecification,
+    FillLayerSpecification,
+    LineLayerSpecification,
+} from "maplibre-gl";
+
 export type FeatureStyle = {
     fill: string;
     fillOpacity: number;
@@ -80,14 +86,35 @@ export const FEATURE_STYLES: Record<string, FeatureStyle> = {
     },
 };
 
-export function styleFor(feature?: { properties?: { name?: string } | null }) {
-    const style =
-        FEATURE_STYLES[feature?.properties?.name ?? ""] ?? DEFAULT_STYLE;
+/**
+ * Compiles FEATURE_STYLES into a MapLibre `match` expression keyed off the
+ * feature's `name` property, falling back to DEFAULT_STYLE.
+ */
+function matchOn(
+    pick: (style: FeatureStyle) => string | number,
+): ExpressionSpecification {
+    return [
+        "match",
+        ["get", "name"],
+        ...Object.entries(FEATURE_STYLES).flatMap(([name, style]) => [
+            name,
+            pick(style),
+        ]),
+        pick(DEFAULT_STYLE),
+    ] as unknown as ExpressionSpecification;
+}
+
+export function fillPaint(): FillLayerSpecification["paint"] {
     return {
-        color: style.outline,
-        opacity: style.outlineOpacity,
-        weight: style.weight,
-        fillColor: style.fill,
-        fillOpacity: style.fillOpacity,
+        "fill-color": matchOn((s) => s.fill),
+        "fill-opacity": matchOn((s) => s.fillOpacity),
+    };
+}
+
+export function linePaint(): LineLayerSpecification["paint"] {
+    return {
+        "line-color": matchOn((s) => s.outline),
+        "line-opacity": matchOn((s) => s.outlineOpacity),
+        "line-width": matchOn((s) => s.weight),
     };
 }
