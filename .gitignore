@@ -34,3 +34,5 @@ pnpm-debug.log*
 pids
 logs
 results
+*.tsbuildinfo
+.vercel

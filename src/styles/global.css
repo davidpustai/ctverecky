@@ -1,3 +1,7 @@
+/* MapLibre's stylesheet sits in its own layer between Tailwind's base and
+   utilities, so utility classes and unlayered page styles override it. */
+@layer theme, base, maplibre, components, utilities;
+@import "maplibre-gl/dist/maplibre-gl.css" layer(maplibre);
 @import "tailwindcss";
 
 @theme {
