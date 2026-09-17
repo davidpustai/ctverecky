@@ -23,7 +23,7 @@ const OG: Og = {
         <button
             id="basemap-toggle"
             type="button"
-            class="invisible absolute top-4 left-4 z-10 inline-flex min-h-6 items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 text-[#011e39]/60 shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
+            class="maplibregl-ctrl invisible inline-flex min-h-6 items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 text-[#011e39]/60 shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
         >
             <svg
                 id="basemap-icon-aerial"
@@ -48,7 +48,7 @@ const OG: Og = {
         <div
             id="stale-badge"
             role="status"
-            class="absolute top-4 right-4 z-10 hidden min-h-6 items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 text-[#011e39]/60 shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
+            class="maplibregl-ctrl hidden min-h-6 items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 text-[#011e39]/60 shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
         >
             <span>Data nemusí být aktuální</span>
             <span id="stale-countdown"></span>
@@ -63,7 +63,7 @@ const OG: Og = {
         <div
             id="loading-badge"
             role="status"
-            class="absolute top-4 right-4 z-10 hidden min-h-6 items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 text-[#011e39]/60 shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
+            class="maplibregl-ctrl hidden min-h-6 items-center gap-2 rounded-lg bg-white px-2.5 py-1.5 text-[#011e39]/60 shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
         >
             <svg
                 class="size-6 animate-spin"
@@ -92,12 +92,13 @@ const OG: Og = {
 
 <script>
     import {
+        GeolocateControl,
         Map,
         setWorkerUrl,
         type GeoJSONSource,
+        type IControl,
         type RasterTileSource,
     } from "maplibre-gl";
-    import "maplibre-gl/dist/maplibre-gl.css";
     // MapLibre resolves its worker at runtime from import.meta.url, which no
     // bundler can see — point it at the chunk Vite actually emits.
     import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
@@ -186,6 +187,14 @@ const OG: Og = {
         zoom: initialView.z,
         minZoom: 0,
         maxZoom: 19,
+        // Merged over MapLibre's English defaults; only strings this page shows.
+        locale: {
+            "AttributionControl.ToggleAttribution": "Přepnout autorství",
+            "AttributionControl.MapFeedback": "Zpětná vazba k mapě",
+            "GeolocateControl.FindMyLocation": "Zobrazit mou polohu",
+            "GeolocateControl.LocationNotAvailable": "Poloha není dostupná",
+            "Map.Title": "Mapa",
+        },
         dragRotate: false,
         pitchWithRotate: false,
         touchPitch: false,
@@ -238,6 +247,37 @@ const OG: Og = {
             // ignore quota / privacy mode errors
         }
     });
+
+    const geolocate = new GeolocateControl({
+        trackUserLocation: true,
+        // Shallow-merged over the defaults, so timeout has to be respelled. A
+        // fix a few seconds old is fine for a dot on a map; the default
+        // `maximumAge: 0` re-wakes the GPS every tick.
+        positionOptions: {
+            enableHighAccuracy: false,
+            maximumAge: 5000,
+            timeout: 6000,
+        },
+    });
+
+    const badge = document.getElementById("stale-badge")!;
+    const loadingBadge = document.getElementById("loading-badge")!;
+
+    // The elements carry `maplibregl-ctrl` in markup: corner containers are
+    // pointer-events:none, and that class switches their children back on.
+    const asControl = (element: HTMLElement): IControl => ({
+        onAdd: () => element,
+        onRemove: () => element.remove(),
+    });
+
+    for (const control of [
+        asControl(toggle),
+        geolocate,
+        asControl(badge),
+        asControl(loadingBadge),
+    ]) {
+        map.addControl(control, "top-left");
+    }
 
     function currentView(): View {
         const c = map.getCenter();
@@ -308,8 +348,6 @@ const OG: Og = {
     // Overlay last: a failing /api/squares must not take the map with it.
     const BACKOFF = [2000, 4000, 8000, 15000, 30000, 60000];
 
-    const badge = document.getElementById("stale-badge")!;
-    const loadingBadge = document.getElementById("loading-badge")!;
     const countdown = document.getElementById("stale-countdown")!;
     const retryButton = document.getElementById(
         "stale-retry",
@@ -466,3 +504,59 @@ const OG: Og = {
     if (squares) applySquares(squares.geojson);
     if (!squares || squares.stale) scheduleRetry();
 </script>
+
+<style is:global>
+    /* Unlayered, so these beat MapLibre's stylesheet (in the `maplibre` layer,
+       see global.css) without extra specificity. */
+
+    /* The corner container carries the row layout, the page inset, and the
+       page's type (the map container sets a 12px font of its own). */
+    .maplibregl-ctrl-top-left {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        box-sizing: border-box;
+        padding: var(--spacing-gutter);
+        max-width: 100%;
+        font: 1rem / 1.666 var(--font-sans);
+    }
+
+    /* Controls self-float and self-margin; the flex row owns spacing instead. */
+    .maplibregl-ctrl-top-left .maplibregl-ctrl {
+        float: none;
+        margin: 0;
+    }
+
+    /* Match the app's button skin: rounded-lg, soft shadow, and the same 36px
+       box the other buttons use. The icon stays MapLibre's own — it colours
+       itself per state (active, error, background-error, disabled). */
+    .maplibregl-ctrl-group {
+        box-shadow: 0 4px 16px rgb(0 0 0 / 0.1);
+        border-radius: 0.5rem;
+    }
+
+    /* Square, and the same box as the text buttons: a 1.666 line-box plus
+       their p-1.5. Deriving it from the stretched row height instead is
+       cyclic — the group contributes no intrinsic width and collapses. */
+    .maplibregl-ctrl-group button {
+        width: calc(1.666rem + 0.75rem);
+        height: calc(1.666rem + 0.75rem);
+    }
+
+    /* The stock icon is a 29px SVG in a 36px box; give it a little more room. */
+    .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+        background-size: 2rem;
+    }
+
+    /* The stock icon ships as flat #333 (and a light #33b5e5 when active);
+       filter it to the same ink the basemap toggle uses, and darken the
+       active blue, which is too pale to read on white. */
+    .maplibregl-ctrl-geolocate:where(:not(:disabled)) .maplibregl-ctrl-icon {
+        filter: opacity(0.6);
+    }
+
+    .maplibregl-ctrl-geolocate-active .maplibregl-ctrl-icon,
+    .maplibregl-ctrl-geolocate-background .maplibregl-ctrl-icon {
+        filter: brightness(0.8);
+    }
+</style>
